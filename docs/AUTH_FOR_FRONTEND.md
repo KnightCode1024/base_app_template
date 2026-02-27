@@ -2,7 +2,38 @@
 
 ## Запуск бэкенда и инфраструктуры
 
-1) В корне проекта создайте `.env` файл следующего содержания:
+Создание jwt сертификатов
+
+```bash
+# Перейти в папку бекенда
+cd backend
+
+# Создание папки для ключей
+mkdir certs
+
+# Переходим в папку для ключей
+cd certs
+
+# Если есть openssl
+# Генерация RSA приватного ключа
+openssl genrsa -out jwt-private.pem 2048
+
+# Генерация публичного ключа
+openssl rsa -in jwt-private.pem -outform PEM -pubout -out jwt-public.pem
+# Без openssl, на windows
+# Создание RSA ключей через .NET
+$rsa = [System.Security.Cryptography.RSA]::Create(2048)
+
+# Сохранение приватного ключа в PEM формате
+$privateKey = $rsa.ExportRSAPrivateKeyPem()
+Set-Content -Path "jwt-private.pem" -Value $privateKey
+
+# Сохранение публичного ключа в PEM формате
+$publicKey = $rsa.ExportRSAPublicKeyPem() 
+Set-Content -Path "jwt-public.pem" -Value $publicKey
+```
+
+В корне проекта создайте `.env` файл следующего содержания:
 
 ```env
 POSTGRES_NAME=db
