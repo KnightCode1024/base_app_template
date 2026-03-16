@@ -8,7 +8,7 @@ from entrypoint.setup import (
     configure_middlewares,
     create_app,
     create_async_container,
-    )
+)
 from routers import root_router
 
 

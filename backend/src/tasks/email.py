@@ -4,13 +4,13 @@ from email.message import EmailMessage
 import aiosmtplib
 
 from core import broker
-from entrypoint.config import Config
+from entrypoint.config import Config, config
 
 logger = logging.getLogger(__name__)
 
 
 @broker.task(task_name="send_verify_email")
-async def send_verify_email(config: Config, to_email: str, token):
+async def send_verify_email(to_email: str, token, config: Config = config):
     message = EmailMessage()
     message["From"] = config.email.USERNAME
     message["To"] = to_email
@@ -32,7 +32,7 @@ async def send_verify_email(config: Config, to_email: str, token):
 
 
 @broker.task(task_name="send_otp_code")
-async def send_otp_code(config: Config, to_email: str, otp_code: str):
+async def send_otp_code(to_email: str, otp_code: str, config: Config = config):
     message = EmailMessage()
     message["From"] = config.email.USERNAME
     message["To"] = to_email

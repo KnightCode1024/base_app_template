@@ -89,9 +89,7 @@ class RabbitMQConfig(BaseSettings):
 
 
 class APPConfig(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="APP_"
-    )
+    model_config = SettingsConfigDict(env_prefix="APP_")
     MODE: str
     NAME: str
     HOST: str

@@ -11,7 +11,7 @@ from schemas.user import (
     UserLogin,
     UserResponse,
     UserUpdate,
-    )
+)
 from services import UserService
 from entrypoint.config import Config
 
@@ -165,7 +165,7 @@ async def refresh_token(
 ):
     try:
         refresh_token = request.cookies.get("refresh_token")
-        new_tokens = service.refresh_token(refresh_token)
+        new_tokens = await service.refresh_token(refresh_token)
         response.set_cookie(
             key="access_token",
             value=new_tokens.access_token,
@@ -250,11 +250,11 @@ async def logout(
 ):
     response.delete_cookie(
         key="access_token",
-        path="/",  
-        domain=None,  
+        path="/",
+        domain=None,
     )
     response.delete_cookie(
-        key="refresh_token", 
+        key="refresh_token",
         path="/",
         domain=None,
     )

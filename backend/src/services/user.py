@@ -2,16 +2,32 @@ import re
 
 from core.permissions import require_roles
 from core.uow import UnitOfWork
-from interfaces import IEmailService
 from models import RoleEnum
 from repositories import IUserRepository
-from schemas.user import (AccessToken, OTPCode, RefreshToken, TokenPair,
-                          UserCreate, UserCreateConsole, UserLogin,
-                          UserResponse, UserUpdate)
-from utils.jwt_utils import (create_access_token, create_refresh_token,
-                             decode_jwt, hash_password, validate_password)
-from utils.otp_utils import (generate_otp_code, generate_otp_secret,
-                             verify_otp_code)
+from schemas.user import (
+    AccessToken,
+    OTPCode,
+    RefreshToken,
+    TokenPair,
+    UserCreate,
+    UserCreateConsole,
+    UserLogin,
+    UserResponse,
+    UserUpdate,
+)
+from utils.jwt_utils import (
+    create_access_token,
+    create_refresh_token,
+    decode_jwt,
+    hash_password,
+    validate_password,
+)
+from utils.otp_utils import (
+    generate_otp_code,
+    generate_otp_secret,
+    verify_otp_code,
+)
+from tasks.email import send_otp_code, send_verify_email
 
 
 class UserService:
@@ -19,11 +35,9 @@ class UserService:
         self,
         uow: UnitOfWork,
         user_repository: IUserRepository,
-        email_service: IEmailService,
     ):
         self.uow = uow
         self.user_repository = user_repository
-        self.email_service = email_service
 
     async def register_user(self, user_data: UserCreate) -> UserResponse:
         self._validate_password(user_data.password, RoleEnum.USER)
@@ -43,7 +57,7 @@ class UserService:
             )
             user = await self.user_repository.create(user_create_data)
 
-            await self.email_service.send_verify_email(
+            await send_verify_email.kiq(
                 to_email=user.email,
                 token=user.token,
             )
@@ -64,9 +78,7 @@ class UserService:
 
         if not verify_otp_code(otp_code.otp_code, otp_secret):
             raise ValueError("Not valid code")
-     
-        # await self.user_repository.set_otp_secret(user, None)
-    
+
         tokens = TokenPair(
             access_token=create_access_token({"sub": str(user.id)}),
             refresh_token=create_refresh_token({"sub": str(user.id)}),
@@ -91,7 +103,7 @@ class UserService:
 
         otp_code = generate_otp_code(otp_secret)
 
-        await self.email_service.send_otp_code(
+        await send_otp_code.kiq(
             to_email=user.email,
             otp_code=otp_code,
         )
@@ -113,7 +125,7 @@ class UserService:
         async with self.uow:
             await self.user_repository.set_otp_secret(user, otp_secret)
 
-        await self.email_service.send_otp_code(
+        await send_otp_code.kiq(
             to_email=user.email,
             otp_code=otp_code,
         )
@@ -149,9 +161,9 @@ class UserService:
 
     @require_roles([RoleEnum.ADMIN, RoleEnum.EMPLOYEE])
     async def get_user(
-            self,
-            user_id: int,
-            current_user,
+        self,
+        user_id: int,
+        current_user,
     ) -> UserResponse:
         user = await self.user_repository.get(user_id)
         if not user:
@@ -170,10 +182,10 @@ class UserService:
 
     @require_roles([RoleEnum.ADMIN])
     async def get_all_users(
-            self,
-            user: UserResponse,
-            offset: int = 0,
-            limit: int = 20,
+        self,
+        user: UserResponse,
+        offset: int = 0,
+        limit: int = 20,
     ):
         users = await self.user_repository.get_all(offset, limit)
         if not users:
@@ -181,8 +193,8 @@ class UserService:
         return users
 
     async def refresh_token(
-            self,
-            payload: RefreshToken,
+        self,
+        payload: RefreshToken,
     ) -> TokenPair:
         try:
             payload = decode_jwt(payload.refresh_token)
@@ -223,7 +235,7 @@ class UserService:
             return None
 
     async def create_user_for_console(
-            self, user_data: UserCreateConsole
+        self, user_data: UserCreateConsole
     ) -> UserResponse:
         try:
             user_role = RoleEnum(user_data.role.lower())

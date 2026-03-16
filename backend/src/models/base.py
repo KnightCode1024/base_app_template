@@ -5,8 +5,7 @@ import inflect
 from sqlalchemy import Integer, func
 from sqlalchemy import Integer, func, Uuid
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import (DeclarativeBase, Mapped, declared_attr,
-                            mapped_column)
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 p = inflect.engine()
 
@@ -47,4 +46,3 @@ class Base(AsyncAttrs, DeclarativeBase):
             cols.append(f"{col}={getattr(self, col)}")
 
         return f"<{self.__class__.__name__} {','.join(cols)}>"
-

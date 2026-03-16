@@ -53,4 +53,4 @@ def configure_middlewares(app: FastAPI) -> None:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-)
+    )
