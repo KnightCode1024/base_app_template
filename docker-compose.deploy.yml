@@ -101,7 +101,7 @@ services:
     volumes:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
-    entrypoint: sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"
+    command: certbot renew --webroot -w /var/www/certbot --quiet
     networks:
       - app_net
     restart: unless-stopped
