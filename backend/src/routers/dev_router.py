@@ -16,4 +16,4 @@ async def pong(
     request: Request,
     rate_limiter: FromDishka[RateLimiter],
 ):
-    return {"msg": "pong"}
+    return {"message": "pong"}
