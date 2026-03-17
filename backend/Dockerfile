@@ -12,3 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
+
+COPY . .
+
+ENV PYTHONPATH=/backend/src
