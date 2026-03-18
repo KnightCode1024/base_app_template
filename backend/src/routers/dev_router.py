@@ -10,7 +10,6 @@ router = APIRouter(
 )
 
 
-
 @router.get("/ping")
 @rate_limit(strategy=Strategy.IP, policy="30/s;200/m;3000/h")
 async def pong(
