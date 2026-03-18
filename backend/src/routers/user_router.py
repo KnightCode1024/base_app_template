@@ -8,6 +8,7 @@ from schemas.user import (
     UserLogin,
     UserResponse,
     UserUpdate,
+    AccessToken
 )
 from services import UserService
 from entrypoint.config import Config
@@ -114,7 +115,7 @@ async def resend_otp(
 
 
 @rate_limit(strategy=Strategy.IP, policy="5/m;20/h;50/d")
-@router.post("/login")
+@router.post("/login", response_model=AccessToken)
 async def login(
     request: Request,
     response: Response,
@@ -124,16 +125,17 @@ async def login(
 ):
     try:
         access_token = await service.login_user(user_data)
-        response.set_cookie(
-            key="access_token",
-            value=access_token.access_token,
-            httponly=True,
-            secure=True,  # True for https,
-            samesite="lax",
-            max_age=5 * 60,
-            path="/",
-        )
-        return {"message": "check your code on email."}
+        # response.set_cookie(
+        #     key="access_token",
+        #     value=access_token.access_token,
+        #     httponly=True,
+        #     secure=True,  # True for https,
+        #     samesite="lax",
+        #     max_age=5 * 60,
+        #     path="/",
+        # )
+        return access_token
+        # return {"message": "check your code on email."}
     except ValueError as e:
         print(e)
         raise HTTPException(
