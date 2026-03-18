@@ -4,31 +4,12 @@ services:
     env_file: .env
     build: ./backend
     restart: always
-    volumes:
-      - ./backend:/backend
-      - ./backend/certs:/backend/certs:ro
     working_dir: /backend
     environment:
       - PYTHONPATH=src
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_NAME=${POSTGRES_NAME}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - EMAIL_PORT=${EMAIL_PORT}
-      - EMAIL_HOST=${EMAIL_HOST}
-      - EMAIL_USERNAME=${EMAIL_USERNAME}
-      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-      - EMAIL_USE_SSL=${EMAIL_USE_SSL}
-      - RABBITMQ_URL=${RABBITMQ_URL}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - APP_MODE=${APP_MODE}
-      - APP_NAME=${APP_NAME}
-    command: sh -c "alembic upgrade head && uvicorn run:make_app --factory --host ${APP_HOST} --port ${APP_PORT} --reload"
-    ports:
-      - "8000:8000"
+    command: sh -c "alembic upgrade head && uvicorn run:make_app --factory --host ${APP_HOST} --port ${APP_PORT}"
+    expose:
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,6 +17,17 @@ services:
         condition: service_healthy
     networks:
       - app_net
+
+  worker:
+    <<: *backend
+    command: taskiq worker core:broker --workers 1 --fs-discover --tasks-pattern **/tasks/*.py
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -52,25 +44,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 8
-
     networks:
       - app_net
-
-  worker:
-    <<: *backend
-    ports: []
-    command: taskiq worker core:broker --workers 1 --fs-discover --tasks-pattern **/tasks/*.py
-    environment:
-      - PYTHONPATH=src
-      - TASKIQ_ADMIN_URL=http://taskiq_admin:3000
-      - TASKIQ_ADMIN_API_TOKEN=supersecret
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
 
   postgres:
     env_file: .env
@@ -105,6 +80,31 @@ services:
       retries: 5
     networks:
       - app_net
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    depends_on:
+      - backend
+    networks:
+      - app_net
+    restart: always
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    command: certbot renew --webroot -w /var/www/certbot --quiet
+    networks:
+      - app_net
+    restart: unless-stopped
 
 networks:
   app_net:
