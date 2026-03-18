@@ -3,10 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, status, Response
 
 from core.rate_limiter import RateLimiter, Strategy, rate_limit
 from schemas.user import (
-    AccessToken,
     OTPCode,
-    RefreshToken,
-    TokenPair,
     UserCreate,
     UserLogin,
     UserResponse,
@@ -59,7 +56,7 @@ async def verify_email(
         )
 
 
-@router.post("/check-code", response_model=TokenPair)
+@router.post("/check-code")
 @rate_limit(strategy=Strategy.IP, policy="5/m;20/h")
 async def check_code(
     request: Request,
@@ -76,7 +73,7 @@ async def check_code(
             key="access_token",
             value=tokens.access_token,
             httponly=True,
-            secure=False,  # True for https,
+            secure=True,  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
             path="/",
@@ -85,13 +82,12 @@ async def check_code(
             key="refresh_token",
             value=tokens.refresh_token,
             httponly=True,
-            secure=False,  # True for https,
+            secure=True,  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/",
         )
         return {"message": "Login success"}
-        # return tokens
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -118,7 +114,7 @@ async def resend_otp(
 
 
 @rate_limit(strategy=Strategy.IP, policy="5/m;20/h;50/d")
-@router.post("/login", response_model=AccessToken)
+@router.post("/login")
 async def login(
     request: Request,
     response: Response,
@@ -132,13 +128,12 @@ async def login(
             key="access_token",
             value=access_token.access_token,
             httponly=True,
-            secure=False,  # True for https,
+            secure=True,  # True for https,
             samesite="lax",
             max_age=5 * 60,
             path="/",
         )
-        return access_token
-        # return {"message": "check your code on email."}
+        return {"message": "check your code on email."}
     except ValueError as e:
         print(e)
         raise HTTPException(
@@ -154,7 +149,7 @@ async def get_profile(
     return current_user
 
 
-@router.post("/refresh", response_model=TokenPair)
+@router.post("/refresh")
 @rate_limit(strategy=Strategy.IP, policy="10/m;100/h")
 async def refresh_token(
     request: Request,
@@ -170,7 +165,7 @@ async def refresh_token(
             key="access_token",
             value=new_tokens.access_token,
             httponly=True,
-            secure=False,  # True for https,
+            secure=True,  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
             path="/",
@@ -179,7 +174,7 @@ async def refresh_token(
             key="refresh_token",
             value=new_tokens.refresh_token,
             httponly=True,
-            secure=False,  # True for https,
+            secure=True,  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/",
