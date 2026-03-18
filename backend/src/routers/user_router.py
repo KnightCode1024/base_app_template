@@ -8,7 +8,7 @@ from schemas.user import (
     UserLogin,
     UserResponse,
     UserUpdate,
-    AccessToken
+    AccessToken,
 )
 from services import UserService
 from entrypoint.config import Config
@@ -74,7 +74,7 @@ async def check_code(
             key="access_token",
             value=tokens.access_token,
             httponly=True,
-            secure=True,  # True for https,
+            secure=config.app.MODE == "prod",  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
             path="/",
@@ -83,7 +83,7 @@ async def check_code(
             key="refresh_token",
             value=tokens.refresh_token,
             httponly=True,
-            secure=True,  # True for https,
+            secure=config.app.MODE == "prod",  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/",
@@ -122,20 +122,20 @@ async def login(
     user_data: UserLogin,
     rate_limiter: FromDishka[RateLimiter],
     service: FromDishka[UserService],
+    config: FromDishka[Config],
 ):
     try:
         access_token = await service.login_user(user_data)
-        # response.set_cookie(
-        #     key="access_token",
-        #     value=access_token.access_token,
-        #     httponly=True,
-        #     secure=True,  # True for https,
-        #     samesite="lax",
-        #     max_age=5 * 60,
-        #     path="/",
-        # )
+        response.set_cookie(
+            key="access_token",
+            value=access_token.access_token,
+            httponly=True,
+            secure=config.app.MODE == "prod",  # True for https,
+            samesite="lax",
+            max_age=5 * 60,
+            path="/",
+        )
         return access_token
-        # return {"message": "check your code on email."}
     except ValueError as e:
         print(e)
         raise HTTPException(
@@ -167,7 +167,7 @@ async def refresh_token(
             key="access_token",
             value=new_tokens.access_token,
             httponly=True,
-            secure=True,  # True for https,
+            secure=config.app.MODE == "prod",  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
             path="/",
@@ -176,7 +176,7 @@ async def refresh_token(
             key="refresh_token",
             value=new_tokens.refresh_token,
             httponly=True,
-            secure=True,  # True for https,
+            secure=config.app.MODE == "prod",  # True for https,
             samesite="lax",
             max_age=config.auth_jwt.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/",

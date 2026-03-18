@@ -18,25 +18,27 @@ class AuthProvider(Provider):
     ) -> UserResponse:
         authorization = request.headers.get("Authorization")
 
-        if not authorization:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authorization header missing",
-            )
-
-        try:
-            scheme, token = authorization.split()
-            if scheme.lower() != "bearer":
+        if authorization:
+            try:
+                scheme, token = authorization.split()
+                if scheme.lower() != "bearer":
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid authentication scheme",
+                    )
+            except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid authentication scheme",
+                    detail="Invalid authorization header",
                 )
+        else:
+            token = request.cookies.get("access_token")
 
-        except ValueError as err:
+        if not token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authorization header",
-            ) from err
+                detail="No token provided",
+            )
 
         try:
             decoded_token = decode_jwt(token)
