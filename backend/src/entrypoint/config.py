@@ -89,7 +89,11 @@ class RabbitMQConfig(BaseSettings):
 
 
 class APPConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="APP_")
+    model_config = SettingsConfigDict(
+        env_prefix="APP_",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
     MODE: str
     NAME: str
     HOST: str
