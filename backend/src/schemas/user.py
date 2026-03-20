@@ -63,5 +63,6 @@ class OTPCode(BaseModel):
     otp_code: str
 
 
+
 class AccessToken(BaseModel):
     access_token: str = Field(...)
